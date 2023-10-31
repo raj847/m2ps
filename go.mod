@@ -4,11 +4,14 @@ go 1.21.3
 
 require (
 	github.com/aws/aws-sdk-go v1.46.6
+	github.com/go-playground/locales v0.14.1
+	github.com/go-playground/universal-translator v0.18.1
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/lib/pq v1.10.9
 	go.mongodb.org/mongo-driver v1.12.1
+	gopkg.in/go-playground/validator.v9 v9.31.0
 	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22
 )
 
@@ -16,8 +19,6 @@ require github.com/stretchr/testify v1.8.4 // indirect
 
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
-	github.com/go-playground/locales v0.14.1 // indirect
-	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
@@ -40,6 +41,6 @@ require (
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
 	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
-	gopkg.in/go-playground/validator.v9 v9.31.0 // indirect
+	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/yaml.v2 v2.3.0 // indirect
 )

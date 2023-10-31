@@ -16,18 +16,19 @@ func NewTrxRepository(repoDB repositories.Repository) trxRepository {
 }
 
 func (ctx trxRepository) CreateTrxInquiry(trx *models.InquryTrx) (id int, err error) {
+
 	query := `INSERT INTO trx (
-		doc_no, doc_date, ext_doc_no, idempotency_key, check_in_datetime,
-		check_out_datetime, check_in_time, check_out_time, duration_time, ou_id,
+		doc_no, doc_date, ext_doc_no,checkin_datetime,
+		checkout_datetime, checkin_time, checkout_time, duration_time, ou_id,
 		ou_code, ou_name, ou_sub_branch_id, ou_sub_branch_code, ou_sub_branch_name,
 		merchant_key, product_id, product_code, product_name, price,
 		base_time, progressive_time, progressive_price, is_pct, progressive_pct,
 		max_price, is_24h, overnight_time, overnight_price, grace_period,
-		drop_off_time, service_fee, grand_total, log_trx, payment_method,
+		drop_off_time, service_fee, grand_total, log_trans, payment_method,
 		mdr, mid, tid, response_trx_code, status,
 		status_desc, vehicle_number_in, vehicle_number_out, ext_local_datetime, settlement_datetime,
 		deduct_datetime, path_image_in, path_image_out, created_at, created_by,
-		updated_at, updated_by, payment_ref_doc_no, ref_doc_no, flg_repeat
+		updated_at, updated_by, payment_ref_doc_no, ref_doc_no, flg_sync_ops
 	) VALUES (
 		$1, $2, $3, $4, $5,
 		$6, $7, $8, $9, $10,
@@ -39,12 +40,12 @@ func (ctx trxRepository) CreateTrxInquiry(trx *models.InquryTrx) (id int, err er
 		$36, $37, $38, $39, $40,
 		$41, $42, $43, $44, $45,
 		$46, $47, $48, $49, $50,
-		$51, $52
+		$51,$52,$53,$54
 	) RETURNING id`
 
 	if ctx.RepoDB.DB != nil {
 		err = ctx.RepoDB.DB.QueryRowContext(ctx.RepoDB.Context, query,
-			trx.DocNo, trx.DocDate, trx.ExtDocNo, trx.IdempotencyKey, trx.CheckInDatetime,
+			trx.DocNo, trx.DocDate, trx.ExtDocNo, trx.CheckInDatetime,
 			trx.CheckOutDatetime, trx.CheckInTime, trx.CheckOutTime, trx.DurationTime, trx.OuID,
 			trx.OuCode, trx.OuName, trx.OuSubBranchID, trx.OuSubBranchCode, trx.OuSubBranchName,
 			trx.MerchantKey, trx.ProductID, trx.ProductCode, trx.ProductName, trx.Price,
@@ -54,8 +55,7 @@ func (ctx trxRepository) CreateTrxInquiry(trx *models.InquryTrx) (id int, err er
 			trx.Mdr, trx.Mid, trx.Tid, trx.ResponseTrxCode, trx.Status,
 			trx.StatusDesc, trx.VehicleNumberIn, trx.VehicleNumberOut, trx.ExtLocalDatetime, trx.SettlementDatetime,
 			trx.DeductDatetime, trx.PathImageIn, trx.PathImageOut, trx.CreatedAt, trx.CreatedBy,
-			trx.UpdatedAt, trx.UpdatedBy, trx.PaymentRefDocNo, trx.RefDocNo, trx.FlgRepeat,
-		).Scan(&id)
+			trx.UpdatedAt, trx.UpdatedBy, trx.PaymentRefDocNo, trx.RefDocNo, trx.FlgRepeat).Scan(&id)
 	} else {
 		err = ctx.RepoDB.DB.QueryRowContext(ctx.RepoDB.Context, query,
 			trx.DocNo, trx.DocDate, trx.ExtDocNo, trx.IdempotencyKey, trx.CheckInDatetime,
@@ -68,8 +68,7 @@ func (ctx trxRepository) CreateTrxInquiry(trx *models.InquryTrx) (id int, err er
 			trx.Mdr, trx.Mid, trx.Tid, trx.ResponseTrxCode, trx.Status,
 			trx.StatusDesc, trx.VehicleNumberIn, trx.VehicleNumberOut, trx.ExtLocalDatetime, trx.SettlementDatetime,
 			trx.DeductDatetime, trx.PathImageIn, trx.PathImageOut, trx.CreatedAt, trx.CreatedBy,
-			trx.UpdatedAt, trx.UpdatedBy, trx.PaymentRefDocNo, trx.RefDocNo, trx.FlgRepeat,
-		).Scan(&id)
+			trx.UpdatedAt, trx.UpdatedBy, trx.PaymentRefDocNo, trx.RefDocNo, trx.FlgRepeat).Scan(&id)
 	}
 
 	if err != nil {

@@ -1,6 +1,7 @@
 package trxService
 
 import (
+	"log"
 	"m2ps/constans"
 	"m2ps/helpers"
 	"m2ps/models"
@@ -21,19 +22,36 @@ func NewTrxService(service services.UsecaseService) trxService {
 }
 
 func (svc *trxService) Create(c echo.Context) error {
-	var tReq models.Date
+	// var tReq models.Date
 	var result models.Response
 	// var DataPsql *models.Trx
+	tReq := new(models.Date)
 	if err := helpers.BindValidateStruct(c, tReq); err != nil {
+		log.Println("BINDING REQUEST :", err)
 		result = helpers.ResponseJSON(false, constans.VALIDATE_ERROR_CODE, err.Error(), nil)
 		return c.JSON(http.StatusBadRequest, result)
 	}
 	data, _, err := svc.Service.TrxMongoRepo.GetData(tReq.Start, tReq.End)
-	if err = helpers.BindValidateStruct(c, tReq); err != nil {
+	if err != nil {
 		result = helpers.ResponseJSON(false, constans.VALIDATE_ERROR_CODE, err.Error(), nil)
+		log.Println("GET DATA :", err)
 		return c.JSON(http.StatusBadRequest, result)
 	}
 	for _, v := range data {
+		var paymentMethod string
+		if v.TypeCard == "01" {
+			paymentMethod = "PREPAID BCA"
+		} else if v.TypeCard == "02" {
+			paymentMethod = "PREPAID MANDIRI"
+		} else if v.TypeCard == "03" {
+			paymentMethod = "PREPAID BNI"
+		} else if v.TypeCard == "04" {
+			paymentMethod = "PREPAID BRI"
+		} else if v.TypeCard == "08" {
+			paymentMethod = "PREPAID TUNAI"
+		} else if v.TypeCard == "07" {
+			paymentMethod = "PREPAID QRIS"
+		}
 		DataPsql := &models.InquryTrx{
 			DocNo:              v.DocNo,
 			DocDate:            v.DocDate,
@@ -50,7 +68,7 @@ func (svc *trxService) Create(c echo.Context) error {
 			OuSubBranchCode:    v.OuSubBranchCode,
 			OuSubBranchName:    v.OuSubBranchName,
 			MerchantKey:        v.MerchantKey,
-			ProductID:          v.MemberData.ProductId,
+			ProductID:          1,
 			ProductCode:        v.ProductCode,
 			ProductName:        v.ProductName,
 			Price:              v.TrxInvoiceItem[0].Price,
@@ -67,35 +85,35 @@ func (svc *trxService) Create(c echo.Context) error {
 			DropOffTime:        constans.EMPTY_VALUE_INT,
 			ServiceFee:         v.TrxInvoiceItem[0].ServiceFee,
 			GrandTotal:         v.GrandTotal,
-			LogTrx:             constans.EMPTY_VALUE,
-			PaymentMethod:      constans.EMPTY_VALUE,
+			LogTrx:             v.LogTrans,
+			PaymentMethod:      paymentMethod,
 			Mdr:                constans.EMPTY_VALUE_INT,
 			Mid:                constans.EMPTY_VALUE,
 			Tid:                constans.EMPTY_VALUE,
 			ResponseTrxCode:    constans.EMPTY_VALUE,
-			Status:             constans.EMPTY_VALUE,
-			StatusDesc:         constans.EMPTY_VALUE,
+			Status:             constans.SUCCESS_CODE,
+			StatusDesc:         constans.SUCCESS,
 			VehicleNumberIn:    v.VehicleNumberIn,
 			VehicleNumberOut:   v.VehicleNumberOut,
 			ExtLocalDatetime:   v.ExtLocalDatetime,
-			SettlementDatetime: nil,
-			DeductDatetime:     nil,
+			SettlementDatetime: &v.ExtLocalDatetime,
+			DeductDatetime:     &v.ExtLocalDatetime,
 			PathImageIn:        constans.EMPTY_VALUE,
 			PathImageOut:       constans.EMPTY_VALUE,
-			CreatedAt:          v.DocDate,
+			CreatedAt:          v.ExtLocalDatetime,
 			CreatedBy:          "ADMIN",
-			UpdatedAt:          v.DocDate,
+			UpdatedAt:          v.ExtLocalDatetime,
 			UpdatedBy:          "ADMIN",
 			PaymentRefDocNo:    constans.EMPTY_VALUE,
 			RefDocNo:           constans.EMPTY_VALUE,
 			FlgRepeat:          v.TrxInvoiceItem[0].FlgRepeat,
 		}
-
 		id, err := svc.Service.TrxRepo.CreateTrxInquiry(DataPsql)
-		if err = helpers.BindValidateStruct(c, tReq); err != nil {
+		if err != nil {
 			result = helpers.ResponseJSON(false, constans.VALIDATE_ERROR_CODE, err.Error(), nil)
 			return c.JSON(http.StatusBadRequest, result)
 		}
+		log.Println("TRX-ID:", id)
 		DataExt := &models.TrxExt{
 			TrxId:          int64(id),
 			BankRefNo:      constans.EMPTY_VALUE,
@@ -115,7 +133,7 @@ func (svc *trxService) Create(c echo.Context) error {
 			UpdatedBy:      "ADMIN",
 		}
 		_, err = svc.Service.TrxRepo.CreateTrxExt(DataExt)
-		if err = helpers.BindValidateStruct(c, tReq); err != nil {
+		if err != nil {
 			result = helpers.ResponseJSON(false, constans.VALIDATE_ERROR_CODE, err.Error(), nil)
 			return c.JSON(http.StatusBadRequest, result)
 		}
@@ -134,7 +152,7 @@ func (svc *trxService) Create(c echo.Context) error {
 			UpdatedBy:       "ADMIN",
 		}
 		_, err = svc.Service.TrxRepo.CreateTrxOu(DataOu)
-		if err = helpers.BindValidateStruct(c, tReq); err != nil {
+		if err != nil {
 			result = helpers.ResponseJSON(false, constans.VALIDATE_ERROR_CODE, err.Error(), nil)
 			return c.JSON(http.StatusBadRequest, result)
 		}

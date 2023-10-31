@@ -4,6 +4,7 @@ import (
 	"m2ps/models"
 	"m2ps/repositories"
 
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -23,7 +24,9 @@ func (ctx trxMongoRepository) GetData(start string, end string) (trxlist []*mode
 		"docDate": bson.M{"$gte": start, "$lte": end},
 	}
 
-	data, err := ctx.RepoDB.MongoDB.Collection("Trx").Find(ctx.RepoDB.Context, filter)
+	options := options.Find().SetSkip(0).SetLimit(1)
+
+	data, err := ctx.RepoDB.MongoDB.Collection("Trx").Find(ctx.RepoDB.Context, filter, options)
 	if err != nil {
 		return nil, false, err
 	}
@@ -35,12 +38,14 @@ func (ctx trxMongoRepository) GetData(start string, end string) (trxlist []*mode
 		}
 
 		trxlist = append(trxlist, &val)
+		// log.Println("datanya", utils.ToString(&val))
 	}
 	data.Close(ctx.RepoDB.Context)
 
 	if len(trxlist) == 0 {
 		return nil, false, nil
 	}
+	// log.Println("datanya", utils.ToString(trxlist))
 
 	return trxlist, true, nil
 }
