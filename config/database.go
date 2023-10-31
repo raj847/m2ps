@@ -4,9 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
-	"m2ps/utils"
-
 	_ "github.com/lib/pq"
 )
 
@@ -30,7 +27,6 @@ func setupConnection() (*sql.DB, error) {
 	if err != nil {
 		return db, errors.New("Connection closed: Failed Connect Database")
 	}
-	log.Println("DB : ", utils.ToString(db))
 
 	return db, nil
 }

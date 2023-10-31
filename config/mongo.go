@@ -1,20 +1,23 @@
 package config
 
 import (
-	"fmt"
 	"context"
+	"fmt"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"log"
+	"m2ps/utils"
 )
 
 var (
 	mongoClient *mongo.Client
 )
 
-func ConnectMongo(ctx context.Context, DBCollection... string) *mongo.Database  {
+func ConnectMongo(ctx context.Context, DBCollection ...string) *mongo.Database {
 	connection := fmt.Sprintf("mongodb://%s:%s", MONGOHost, MONGOPort)
 	fmt.Println("Connection Mongo:", connection)
 	clientOptions := options.Client()
+	log.Println("clientOptions: ", utils.ToString(clientOptions))
 	clientOptions.ApplyURI(connection)
 	client, err := mongo.NewClient(clientOptions)
 	if err != nil {
@@ -34,6 +37,6 @@ func ConnectMongo(ctx context.Context, DBCollection... string) *mongo.Database  
 	return client.Database(col)
 }
 
-func CloseMongo(ctx context.Context)  {
+func CloseMongo(ctx context.Context) {
 	mongoClient.Disconnect(ctx)
 }
