@@ -1,6 +1,10 @@
 package trxRepository
 
 import (
+	"database/sql"
+	"fmt"
+	"m2ps/constans"
+	"m2ps/helpers"
 	"m2ps/models"
 	"m2ps/repositories"
 )
@@ -144,4 +148,210 @@ func (ctx trxRepository) CreateTrxOu(trx *models.TrxOu) (id int, err error) {
 	}
 
 	return id, nil
+}
+
+func trxDto(rows *sql.Rows) ([]models.TrxResponseData, error) {
+	var result []models.TrxResponseData
+
+	for rows.Next() {
+		var val models.TrxResponseData
+		err := rows.Scan(
+			&val.Id,
+			&val.DocNo,
+			&val.DocDate,
+			&val.ExtDocNo,
+			&val.OuId,
+			&val.OuCode,
+			&val.OuName,
+			&val.ProductId,
+			&val.ProductCode,
+			&val.ProductName,
+			&val.ServiceFee,
+			&val.GrandTotal,
+			&val.PaymentMethod,
+			&val.Mdr,
+			&val.Status,
+			&val.StatusDesc,
+			&val.SettlementDatetime,
+			&val.DeductDatetime,
+			&val.PaymentRefDocNo,
+			&val.MemberCode,
+			&val.MemberName,
+			&val.MemberType,
+			&val.CardNumberUuid,
+			&val.CardPan,
+			&val.CheckingDatetime,
+			&val.CheckoutDatetime,
+			&val.VehicleNumberIn,
+			&val.VehicleNumberOut,
+			&val.ShiftCode,
+			&val.Username,
+			&val.Mid,
+			&val.Tid,
+			&val.Gate,
+		)
+		if err != nil {
+			return result, err
+		}
+		result = append(result, val)
+	}
+
+	return result, nil
+}
+
+func (ctx trxRepository) GetTrxSummariesAdvance(trx models.TrxFilter) (models.TrxResponseSummaries, error) {
+	var args []interface{}
+	var summaries models.TrxResponseSummaries
+
+	var query = `
+		SELECT COUNT(1) as total_records,
+			COALESCE(SUM(grand_total),0) AS sum_grand_total,
+			COALESCE(SUM(service_fee),0) AS sum_service_fee,
+			COALESCE(SUM(mdr), 0) AS sum_mdr
+		FROM vw_trx_list_branch
+		WHERE ou_id = ANY(?::bigint[])`
+
+	args = append(args, fmt.Sprintf("%s%s%s", "{", trx.OuList, "}"))
+
+	if trx.DateFrom != constans.EMPTY_VALUE {
+		query += ` AND doc_date BETWEEN ? `
+		args = append(args, trx.DateFrom)
+		query += ` AND ? `
+		args = append(args, trx.DateTo)
+	}
+
+	if trx.CheckOutDatetimeFrom != constans.EMPTY_VALUE {
+		query += ` AND checkout_datetime BETWEEN ? `
+		args = append(args, trx.CheckOutDatetimeFrom)
+		query += ` AND ? `
+		args = append(args, trx.CheckOutDatetimeTo)
+	}
+
+	if trx.Username != constans.EMPTY_VALUE {
+		query += ` AND username = ? `
+		args = append(args, trx.Username)
+	}
+
+	if trx.SettlementFrom != constans.EMPTY_VALUE {
+		query += ` AND settlement_datetime BETWEEN ? `
+		args = append(args, trx.SettlementFrom)
+		query += ` AND ? `
+		args = append(args, trx.SettlementTo)
+	}
+
+	if trx.PaymentMethod != constans.EMPTY_VALUE {
+		query += ` AND payment_method = ? `
+		args = append(args, trx.PaymentMethod)
+	}
+
+	if trx.Status != constans.EMPTY_VALUE {
+		query += ` AND status = ? `
+		args = append(args, trx.Status)
+	}
+
+	if trx.Keyword != constans.EMPTY_VALUE {
+		query += ` AND (doc_no ILIKE ? OR ext_doc_no ILIKE ? OR payment_ref_doc_no ILIKE ? OR member_code ILIKE ? OR member_name ILIKE ? OR card_pan ILIKE ? OR card_number_uuid ILIKE ?) `
+		args = append(args, "%"+trx.Keyword+"%", "%"+trx.Keyword+"%", "%"+trx.Keyword+"%", "%"+trx.Keyword+"%", "%"+trx.Keyword+"%", "%"+trx.Keyword+"%", "%"+trx.Keyword+"%")
+	}
+
+	if trx.VehicleNumber != constans.EMPTY_VALUE {
+		query += ` AND (vehicle_number_in ILIKE ? OR vehicle_number_out ILIKE ?) `
+		args = append(args, "%"+trx.VehicleNumber+"%", "%"+trx.VehicleNumber+"%")
+	}
+
+	newQuery := helpers.ReplaceSQL(query, "?")
+
+	err := ctx.RepoDB.DB.QueryRowContext(ctx.RepoDB.Context, newQuery, args...).Scan(&summaries.TotalRecords, &summaries.GrandTotal, &summaries.ServiceFee, &summaries.Mdr)
+	if err != nil {
+		return summaries, err
+	}
+
+	return summaries, nil
+
+}
+
+func (ctx trxRepository) GetTrx(trx models.TrxFilter) ([]models.TrxResponseData, error) {
+	var args []interface{}
+
+	var query = `
+			SELECT id, doc_no, doc_date, ext_doc_no, ou_id, ou_code, ou_name, 
+				product_id, product_code, product_name, service_fee, grand_total, payment_method, mdr, 
+				status, status_desc, settlement_datetime, deduct_datetime, payment_ref_doc_no,
+				member_code, member_name, member_type, card_number_uuid, card_pan, checkin_datetime, checkout_datetime,
+				vehicle_number_in, vehicle_number_out, shift_code, username, mid, tid, gate
+			FROM vw_trx_list_branch WHERE ou_id = ANY(?::bigint[]) `
+
+	args = append(args, fmt.Sprintf("%s%s%s", "{", trx.OuList, "}"))
+
+	if trx.DateFrom != constans.EMPTY_VALUE {
+		query += ` AND doc_date BETWEEN ? `
+		args = append(args, trx.DateFrom)
+		query += ` AND ? `
+		args = append(args, trx.DateTo)
+	}
+
+	if trx.CheckOutDatetimeFrom != constans.EMPTY_VALUE {
+		query += ` AND checkout_datetime >= ? `
+		args = append(args, trx.CheckOutDatetimeFrom)
+		query += ` AND checkout_datetime <= ? `
+		args = append(args, trx.CheckOutDatetimeTo)
+	}
+
+	if trx.Username != constans.EMPTY_VALUE {
+		query += ` AND username = ? `
+		args = append(args, trx.Username)
+	}
+
+	if trx.SettlementFrom != constans.EMPTY_VALUE {
+		query += ` AND settlement_datetime >= ? `
+		args = append(args, trx.SettlementFrom)
+		query += ` AND settlement_datetime <= ? `
+		args = append(args, trx.SettlementTo)
+	}
+
+	if trx.PaymentMethod != constans.EMPTY_VALUE {
+		query += ` AND payment_method = ? `
+		args = append(args, trx.PaymentMethod)
+	}
+
+	if trx.Status != constans.EMPTY_VALUE {
+		query += ` AND status = ? `
+		args = append(args, trx.Status)
+	}
+
+	if trx.Keyword != constans.EMPTY_VALUE {
+		query += ` AND (doc_no ILIKE ? OR ext_doc_no ILIKE ? OR payment_ref_doc_no ILIKE ? OR member_code ILIKE ? OR member_name ILIKE ? OR card_pan ILIKE ? OR card_number_uuid ILIKE ?) `
+		args = append(args, "%"+trx.Keyword+"%", "%"+trx.Keyword+"%", "%"+trx.Keyword+"%", "%"+trx.Keyword+"%", "%"+trx.Keyword+"%", "%"+trx.Keyword+"%", "%"+trx.Keyword+"%")
+	}
+
+	if trx.VehicleNumber != constans.EMPTY_VALUE {
+		query += ` AND (vehicle_number_in ILIKE ? OR vehicle_number_out ILIKE ?) `
+		args = append(args, "%"+trx.VehicleNumber+"%", "%"+trx.VehicleNumber+"%")
+	}
+
+	if trx.AscDesc == "asc" {
+		query += ` ORDER BY ` + trx.ColumOrderName + ` ASC `
+	} else if trx.AscDesc == "desc" {
+		query += ` ORDER BY ` + trx.ColumOrderName + ` DESC `
+	} else {
+		query += ` ORDER BY doc_date DESC, doc_no DESC `
+	}
+
+	query += ` LIMIT ? OFFSET ? `
+	args = append(args, trx.Length, trx.Start)
+
+	newQuery := helpers.ReplaceSQL(query, "?")
+
+	rows, err := ctx.RepoDB.DB.QueryContext(ctx.RepoDB.Context, newQuery, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return trxDto(rows)
 }

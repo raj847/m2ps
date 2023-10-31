@@ -1,11 +1,13 @@
 package trxService
 
 import (
+	"fmt"
 	"log"
 	"m2ps/constans"
 	"m2ps/helpers"
 	"m2ps/models"
 	"m2ps/services"
+	"m2ps/utils"
 	"net/http"
 
 	"github.com/labstack/echo"
@@ -159,4 +161,46 @@ func (svc *trxService) Create(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, &data)
+}
+
+func (svc trxService) GetTrx(ctx echo.Context) error {
+	var result models.Response
+	var payload models.TrxResponsePayload
+
+	request := new(models.TrxFilter)
+	if err := helpers.BindValidateStruct(ctx, request); err != nil {
+		result = helpers.ResponseJSON(false, constans.VALIDATE_ERROR_CODE, err.Error(), nil)
+		return ctx.JSON(http.StatusBadRequest, result)
+	}
+
+	log.Println("REQUEST: ", utils.ToString(request))
+
+	if request.CheckOutDatetimeFrom != constans.EMPTY_VALUE {
+		request.CheckOutDatetimeFrom = fmt.Sprintf("%s%s", request.CheckOutDatetimeFrom, ":00")
+	}
+
+	if request.CheckOutDatetimeTo != constans.EMPTY_VALUE {
+		request.CheckOutDatetimeTo = fmt.Sprintf("%s%s", request.CheckOutDatetimeTo, ":59")
+	}
+
+	listData, err := svc.Service.TrxRepo.GetTrx(*request)
+	if err != nil {
+		result = helpers.ResponseJSON(false, constans.SYSTEM_ERROR_CODE, err.Error(), nil)
+		return ctx.JSON(http.StatusBadRequest, result)
+	}
+
+	payload.TrxResponseData = listData
+	if request.Draw == 1 {
+		summary, err := svc.Service.TrxRepo.GetTrxSummariesAdvance(*request)
+		if err != nil {
+			result = helpers.ResponseJSON(false, constans.SYSTEM_ERROR_CODE, err.Error(), nil)
+			return ctx.JSON(http.StatusBadRequest, result)
+		}
+
+		payload.TrxResponseSummaries = summary
+		payload.TrxResponseSummaries.TotalNett = payload.TrxResponseSummaries.GrandTotal - payload.TrxResponseSummaries.ServiceFee - payload.TrxResponseSummaries.Mdr
+	}
+
+	result = helpers.ResponseJSON(true, constans.SUCCESS_CODE, constans.EMPTY_VALUE, listData)
+	return ctx.JSON(http.StatusOK, result)
 }

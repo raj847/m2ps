@@ -4,7 +4,7 @@ const (
 	// SUCCESS_CODE = "101"
 	// PENDING_CODE = "102"
 	// FAILED_CODE  = "103"
-
+	SYSTEM_ERROR_CODE = "501"
 	// Error berhubungan dengan data
 	DATA_NOT_FOUND_CODE = "201"
 	WORKER_SUCCESS_CODE = "200"

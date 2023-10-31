@@ -1,6 +1,12 @@
 package models
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
+
+type JSONTime time.Time
 
 type Trx struct {
 	Id               primitive.ObjectID      `json:"_id" bson:"_id"`
@@ -158,6 +164,20 @@ type InquryTrx struct {
 	FlgRepeat          string  `json:"flgRepeat"`
 }
 
+type TrxResponsePayload struct {
+	TrxResponseSummaries TrxResponseSummaries `json:"summaries"`
+	TrxResponseData      []TrxResponseData    `json:"data"`
+}
+
+type TrxResponseSummaries struct {
+	TotalRecords int     `json:"totalRecords"`
+	Price        float64 `json:"price"`
+	ServiceFee   float64 `json:"serviceFee"`
+	Mdr          float64 `json:"mdr"`
+	GrandTotal   float64 `json:"grandTotal"`
+	TotalNett    float64 `json:"totalNett"`
+}
+
 type Date struct {
 	Start string `json:"startdate"`
 	End   string `json:"enddate"`
@@ -195,4 +215,62 @@ type TrxOu struct {
 	OuSubBranchName string `json:"ouSubBranchName"`
 	CreatedBy       string `json:"createdBy"`
 	UpdatedBy       string `json:"updatedBy"`
+}
+
+type TrxFilter struct {
+	Draw                 int    `json:"draw"`
+	DateFrom             string `json:"dateFrom"`
+	DateTo               string `json:"dateTo"`
+	CheckOutDatetimeFrom string `json:"checkOutDatetimeFrom"`
+	CheckOutDatetimeTo   string `json:"checkOutDatetimeTo"`
+	MainOuList           string `json:"mainOuList"`
+	OuList               string `json:"ouList"`
+	Status               string `json:"status"`
+	Keyword              string `json:"keyword"`
+	PaymentMethod        string `json:"paymentMethod"`
+	ColumOrderName       string `json:"columOrderName"`
+	AscDesc              string `json:"ascDesc"`
+	Start                int    `json:"start"`
+	Length               int    `json:"length"`
+	SettlementFrom       string `json:"settlementFrom"`
+	SettlementTo         string `json:"settlementTo"`
+	VehicleNumber        string `json:"vehicleNumber"`
+	OuType               string `json:"ouType"`
+	Username             string `json:"username"`
+}
+
+type TrxResponseData struct {
+	Id                 int64     `json:"id"`
+	DocNo              string    `json:"docNo"`
+	DocDate            string    `json:"docDate"`
+	ExtDocNo           string    `json:"extDocNo"`
+	OuId               int64     `json:"ouId"`
+	OuCode             string    `json:"ouCode"`
+	OuName             string    `json:"ouName"`
+	ProductId          int64     `json:"productId"`
+	ProductCode        string    `json:"productCode"`
+	ProductName        string    `json:"productName"`
+	ServiceFee         float64   `json:"serviceFee"`
+	GrandTotal         float64   `json:"grandTotal"`
+	PaymentMethod      string    `json:"paymentMethod"`
+	Mdr                float64   `json:"mdr"`
+	Status             string    `json:"status"`
+	StatusDesc         *string   `json:"statusDesc"`
+	SettlementDatetime *JSONTime `json:"settlementDatetime"`
+	DeductDatetime     *JSONTime `json:"deductDatetime"`
+	PaymentRefDocNo    *string   `json:"paymentRefDocNo"`
+	MemberCode         string    `json:"memberCode"`
+	MemberName         string    `json:"memberName"`
+	MemberType         string    `json:"memberType"`
+	CardPan            string    `json:"cardPan"`
+	CardNumberUuid     string    `json:"cardNumberUuid"`
+	CheckingDatetime   JSONTime  `json:"checkingDatetime"`
+	CheckoutDatetime   JSONTime  `json:"checkoutDatetime"`
+	VehicleNumberIn    string    `json:"vehicleNumberIn"`
+	VehicleNumberOut   string    `json:"vehicleNumberOut"`
+	ShiftCode          string    `json:"shiftCode"`
+	Username           string    `json:"username"`
+	Mid                string    `json:"mid"`
+	Tid                string    `json:"tid"`
+	Gate               *string   `json:"gate"`
 }

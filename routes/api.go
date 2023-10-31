@@ -15,5 +15,6 @@ func RoutesApi(e echo.Echo, usecaseSvc services.UsecaseService) {
 	trxSvc := trxService.NewTrxService(usecaseSvc)
 	trxGroup := routePrefix.Group("/trx")
 	trxGroup.POST("/add-trx", trxSvc.Create)
+	trxGroup.POST("/get-trx", trxSvc.GetTrx)
 
 }
