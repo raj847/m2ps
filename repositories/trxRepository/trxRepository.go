@@ -19,7 +19,7 @@ func NewTrxRepository(repoDB repositories.Repository) trxRepository {
 	}
 }
 
-func (ctx trxRepository) CreateTrxInquiry(trx *models.InquryTrx) (id int, err error) {
+func (ctx trxRepository) CreateTrxInquiry(trx *models.InquryTrx, tx *sql.Tx) (id int, err error) {
 
 	query := `INSERT INTO trx (
 		doc_no, doc_date, ext_doc_no,checkin_datetime,
@@ -47,8 +47,8 @@ func (ctx trxRepository) CreateTrxInquiry(trx *models.InquryTrx) (id int, err er
 		$51,$52,$53,$54
 	) RETURNING id`
 
-	if ctx.RepoDB.DB != nil {
-		err = ctx.RepoDB.DB.QueryRowContext(ctx.RepoDB.Context, query,
+	if tx != nil {
+		err = tx.QueryRowContext(ctx.RepoDB.Context, query,
 			trx.DocNo, trx.DocDate, trx.ExtDocNo, trx.CheckInDatetime,
 			trx.CheckOutDatetime, trx.CheckInTime, trx.CheckOutTime, trx.DurationTime, trx.OuID,
 			trx.OuCode, trx.OuName, trx.OuSubBranchID, trx.OuSubBranchCode, trx.OuSubBranchName,
@@ -82,7 +82,7 @@ func (ctx trxRepository) CreateTrxInquiry(trx *models.InquryTrx) (id int, err er
 	return id, nil
 }
 
-func (ctx trxRepository) CreateTrxExt(trx *models.TrxExt) (id int, err error) {
+func (ctx trxRepository) CreateTrxExt(trx *models.TrxExt, tx *sql.Tx) (id int, err error) {
 	query := `INSERT INTO trx_ext (
 		trx_id, bank_ref_no, card_type, card_pan, last_balance,
 		current_balance, member_code, member_name, member_type, card_number_uuid,
@@ -95,8 +95,8 @@ func (ctx trxRepository) CreateTrxExt(trx *models.TrxExt) (id int, err error) {
 		$16
 	) RETURNING trx_id`
 
-	if ctx.RepoDB.DB != nil {
-		err = ctx.RepoDB.DB.QueryRowContext(ctx.RepoDB.Context, query,
+	if tx != nil {
+		err = tx.QueryRowContext(ctx.RepoDB.Context, query,
 			trx.TrxId, trx.BankRefNo, trx.CardType, trx.CardPan, trx.LastBalance,
 			trx.CurrentBalance, trx.MemberCode, trx.MemberName, trx.MemberType, trx.CardNumberUuid,
 			trx.Username, trx.ShiftCode, trx.CreatedAt, trx.CreatedBy, trx.UpdatedAt,
@@ -118,7 +118,7 @@ func (ctx trxRepository) CreateTrxExt(trx *models.TrxExt) (id int, err error) {
 	return id, nil
 }
 
-func (ctx trxRepository) CreateTrxOu(trx *models.TrxOu) (id int, err error) {
+func (ctx trxRepository) CreateTrxOu(trx *models.TrxOu, tx *sql.Tx) (id int, err error) {
 	query := `INSERT INTO trx_ou (
 		trx_id, ou_id, ou_code, ou_name, ou_branch_id,
 		ou_branch_code, ou_branch_name, ou_sub_branch_id, ou_sub_branch_code, ou_sub_branch_name,
@@ -129,8 +129,8 @@ func (ctx trxRepository) CreateTrxOu(trx *models.TrxOu) (id int, err error) {
 		$11, $12
 	) RETURNING trx_id`
 
-	if ctx.RepoDB.DB != nil {
-		err = ctx.RepoDB.DB.QueryRowContext(ctx.RepoDB.Context, query,
+	if tx != nil {
+		err = tx.QueryRowContext(ctx.RepoDB.Context, query,
 			trx.TrxID, trx.OuID, trx.OuCode, trx.OuName, trx.OuBranchID,
 			trx.OuBranchCode, trx.OuBranchName, trx.OuSubBranchID, trx.OuSubBranchCode, trx.OuSubBranchName,
 			trx.CreatedBy, trx.UpdatedBy,

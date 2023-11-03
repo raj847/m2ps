@@ -1,6 +1,7 @@
 package trxService
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"m2ps/constans"
@@ -110,54 +111,65 @@ func (svc *trxService) Create(c echo.Context) error {
 			RefDocNo:           constans.EMPTY_VALUE,
 			FlgRepeat:          v.TrxInvoiceItem[0].FlgRepeat,
 		}
-		id, err := svc.Service.TrxRepo.CreateTrxInquiry(DataPsql)
-		if err != nil {
-			result = helpers.ResponseJSON(false, constans.VALIDATE_ERROR_CODE, err.Error(), nil)
-			return c.JSON(http.StatusBadRequest, result)
-		}
-		log.Println("TRX-ID:", id)
-		DataExt := &models.TrxExt{
-			TrxId:          int64(id),
-			BankRefNo:      constans.EMPTY_VALUE,
-			CardType:       v.TypeCard,
-			CardPan:        constans.EMPTY_VALUE,
-			LastBalance:    constans.EMPTY_VALUE_INT,
-			CurrentBalance: constans.EMPTY_VALUE_INT,
-			MemberCode:     &v.MemberCode,
-			MemberName:     &v.MemberName,
-			MemberType:     &v.MemberType,
-			CardNumberUuid: &v.CardNumberUUID,
-			Username:       constans.EMPTY_VALUE,
-			ShiftCode:      constans.EMPTY_VALUE,
-			CreatedAt:      v.DocDate,
-			CreatedBy:      "ADMIN",
-			UpdatedAt:      v.DocDate,
-			UpdatedBy:      "ADMIN",
-		}
-		_, err = svc.Service.TrxRepo.CreateTrxExt(DataExt)
-		if err != nil {
-			result = helpers.ResponseJSON(false, constans.VALIDATE_ERROR_CODE, err.Error(), nil)
-			return c.JSON(http.StatusBadRequest, result)
-		}
-		DataOu := &models.TrxOu{
-			TrxID:           int64(id),
-			OuID:            v.MainOuId,
-			OuCode:          v.MainOuCode,
-			OuName:          v.MainOuName,
-			OuBranchID:      v.OuId,
-			OuBranchCode:    v.OuCode,
-			OuBranchName:    v.OuName,
-			OuSubBranchID:   v.OuSubBranchId,
-			OuSubBranchCode: v.OuSubBranchCode,
-			OuSubBranchName: v.OuSubBranchName,
-			CreatedBy:       "ADMIN",
-			UpdatedBy:       "ADMIN",
-		}
-		_, err = svc.Service.TrxRepo.CreateTrxOu(DataOu)
-		if err != nil {
-			result = helpers.ResponseJSON(false, constans.VALIDATE_ERROR_CODE, err.Error(), nil)
-			return c.JSON(http.StatusBadRequest, result)
-		}
+		utils.DBTransaction(svc.Service.RepoDB, func(tx *sql.Tx) error {
+			id, err := svc.Service.TrxRepo.CreateTrxInquiry(DataPsql, tx)
+			if err != nil {
+				log.Println("Error AddTrxInquiry : ", err.Error())
+				result = helpers.ResponseJSON(false, constans.VALIDATE_ERROR_CODE, err.Error(), nil)
+				return c.JSON(http.StatusBadRequest, result)
+			}
+			log.Println("TRX-ID:", id)
+			DataExt := &models.TrxExt{
+				TrxId:          int64(id),
+				BankRefNo:      constans.EMPTY_VALUE,
+				CardType:       v.TypeCard,
+				CardPan:        constans.EMPTY_VALUE,
+				LastBalance:    constans.EMPTY_VALUE_INT,
+				CurrentBalance: constans.EMPTY_VALUE_INT,
+				MemberCode:     &v.MemberCode,
+				MemberName:     &v.MemberName,
+				MemberType:     &v.MemberType,
+				CardNumberUuid: &v.CardNumberUUID,
+				Username:       constans.EMPTY_VALUE,
+				ShiftCode:      constans.EMPTY_VALUE,
+				CreatedAt:      v.DocDate,
+				CreatedBy:      "ADMIN",
+				UpdatedAt:      v.DocDate,
+				UpdatedBy:      "ADMIN",
+			}
+			_, err = svc.Service.TrxRepo.CreateTrxExt(DataExt, tx)
+			if err != nil {
+				log.Println("Error AddTrxExt : ", err.Error())
+				result = helpers.ResponseJSON(false, constans.VALIDATE_ERROR_CODE, err.Error(), nil)
+				return c.JSON(http.StatusBadRequest, result)
+			}
+			DataOu := &models.TrxOu{
+				TrxID:           int64(id),
+				OuID:            v.MainOuId,
+				OuCode:          v.MainOuCode,
+				OuName:          v.MainOuName,
+				OuBranchID:      v.OuId,
+				OuBranchCode:    v.OuCode,
+				OuBranchName:    v.OuName,
+				OuSubBranchID:   v.OuSubBranchId,
+				OuSubBranchCode: v.OuSubBranchCode,
+				OuSubBranchName: v.OuSubBranchName,
+				CreatedBy:       "ADMIN",
+				UpdatedBy:       "ADMIN",
+			}
+			_, err = svc.Service.TrxRepo.CreateTrxOu(DataOu, tx)
+			if err != nil {
+				log.Println("Error AddTrxOu : ", err.Error())
+				result = helpers.ResponseJSON(false, constans.VALIDATE_ERROR_CODE, err.Error(), nil)
+				return c.JSON(http.StatusBadRequest, result)
+			}
+			if err != nil {
+				log.Println("Error DBTransaction:", err.Error())
+				return err
+			}
+			return nil
+		})
+
 	}
 
 	return c.JSON(http.StatusOK, &data)

@@ -1,11 +1,14 @@
 package repositories
 
-import "m2ps/models"
+import (
+	"database/sql"
+	"m2ps/models"
+)
 
 type TrxRepository interface {
-	CreateTrxInquiry(trx *models.InquryTrx) (id int, err error)
-	CreateTrxExt(trx *models.TrxExt) (id int, err error)
-	CreateTrxOu(trx *models.TrxOu) (id int, err error)
+	CreateTrxInquiry(trx *models.InquryTrx, tx *sql.Tx) (id int, err error)
+	CreateTrxExt(trx *models.TrxExt, tx *sql.Tx) (id int, err error)
+	CreateTrxOu(trx *models.TrxOu, tx *sql.Tx) (id int, err error)
 	GetTrx(trx models.TrxFilter) ([]models.TrxResponseData, error)
 	GetTrxSummariesAdvance(trx models.TrxFilter) (models.TrxResponseSummaries, error)
 }
