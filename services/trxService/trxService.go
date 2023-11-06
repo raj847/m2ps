@@ -30,14 +30,12 @@ func (svc *trxService) Create(c echo.Context) error {
 	// var DataPsql *models.Trx
 	tReq := new(models.Date)
 	if err := helpers.BindValidateStruct(c, tReq); err != nil {
-		log.Println("BINDING REQUEST :", err)
 		result = helpers.ResponseJSON(false, constans.VALIDATE_ERROR_CODE, err.Error(), nil)
 		return c.JSON(http.StatusBadRequest, result)
 	}
 	data, _, err := svc.Service.TrxMongoRepo.GetData(tReq.Start, tReq.End)
 	if err != nil {
 		result = helpers.ResponseJSON(false, constans.VALIDATE_ERROR_CODE, err.Error(), nil)
-		log.Println("GET DATA :", err)
 		return c.JSON(http.StatusBadRequest, result)
 	}
 	for _, v := range data {
@@ -51,9 +49,9 @@ func (svc *trxService) Create(c echo.Context) error {
 		} else if v.TypeCard == "04" {
 			paymentMethod = "PREPAID BRI"
 		} else if v.TypeCard == "08" {
-			paymentMethod = "PREPAID TUNAI"
+			paymentMethod = "TUNAI"
 		} else if v.TypeCard == "07" {
-			paymentMethod = "PREPAID QRIS"
+			paymentMethod = "QRIS"
 		}
 		DataPsql := &models.InquryTrx{
 			DocNo:              v.DocNo,
@@ -71,7 +69,7 @@ func (svc *trxService) Create(c echo.Context) error {
 			OuSubBranchCode:    v.OuSubBranchCode,
 			OuSubBranchName:    v.OuSubBranchName,
 			MerchantKey:        v.MerchantKey,
-			ProductID:          1,
+			ProductID:          v.TrxInvoiceItem[0].ProductId, //hardcode
 			ProductCode:        v.ProductCode,
 			ProductName:        v.ProductName,
 			Price:              v.TrxInvoiceItem[0].Price,
